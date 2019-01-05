@@ -1,0 +1,61 @@
+# <DESCRIBE SERVICE>
+service: wild-rydes-ride-data-lake
+
+plugins:
+  - serverless-python-requirements
+
+
+custom:
+  stage: "${opt:stage, env:SLS_STAGE, 'dev'}"
+  region: "${opt:region, 'us-east-2'}"
+  log_level: "${env:LOG_LEVEL, 'INFO'}"
+
+  ddb_stream_arn: "${ssm:/wild-rydes-ride-record/${self:provider.stage}/DdbStreamArn}"
+
+  pythonRequirements:
+    dockerizePip: false
+
+
+provider:
+  name: aws
+  runtime: python3.6
+  stage: ${self:custom.stage}
+  region: ${self:custom.region}
+  cfnRole: "arn:aws:iam::${env:AWS_ACCOUNT}:role/CloudFormationDeployRole"
+  environment:
+    LOG_LEVEL: ${self:custom.log_level}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "S3:PutObject"
+      Resource:
+        Fn::Join:
+          - '/'
+          - - Fn::GetAtt:
+              - WildRydesDataLakeBucket
+              - Arn
+            - '*'
+  stackTags:
+    x-service: wild-rydes-ride-data-lake
+    x-stack: ${self:service}-${self:provider.stage}
+
+
+functions:
+  WriteRecord:
+    handler: handlers/write_record.handler
+    description: "Write record to data lake"
+    memorySize: 128
+    timeout: 30
+    environment:
+      DATA_LAKE_S3_BUCKET:
+        Ref: WildRydesDataLakeBucket
+    events:
+      - stream:
+          type: dynamodb
+          arn: "${self:custom.ddb_stream_arn}"
+
+resources:
+  Resources:
+
+    WildRydesDataLakeBucket:
+      Type: "AWS::S3::Bucket"
