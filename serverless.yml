@@ -24,17 +24,6 @@ provider:
   cfnRole: "arn:aws:iam::${env:AWS_ACCOUNT}:role/CloudFormationDeployRole"
   environment:
     LOG_LEVEL: ${self:custom.log_level}
-  iamRoleStatements:
-    - Effect: "Allow"
-      Action:
-        - "S3:PutObject"
-      Resource:
-        Fn::Join:
-          - '/'
-          - - Fn::GetAtt:
-              - WildRydesDataLakeBucket
-              - Arn
-            - '*'
   stackTags:
     x-service: wild-rydes-ride-data-lake
     x-stack: ${self:service}-${self:provider.stage}
@@ -59,3 +48,27 @@ resources:
 
     WildRydesDataLakeBucket:
       Type: "AWS::S3::Bucket"
+
+    WildRydesDataLakeBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: WildRydesDataLakeBucket
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: '*'
+              Action:
+                - s3:*
+              Resource:
+                - Fn::Join:
+                  - "/"
+                  - - Fn::GetAtt:
+                      - WildRydesDataLakeBucket
+                      - Arn
+                    - "*"
+                - Fn::GetAtt:
+                  - WildRydesDataLakeBucket
+                  - Arn
+
