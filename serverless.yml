@@ -60,3 +60,32 @@ resources:
     WildRydesDataLakeBucket:
       Type: "AWS::S3::Bucket"
 
+    S3PublicReadProhibitedConfigRule:
+      Type: AWS::Config::ConfigRule
+      Properties:
+        ConfigRuleName: "S3PublicReadProhibitedConfigRule-${self:provider.stage}"
+        Description: "Checks that your S3 buckets do not allow public read access. If an S3 bucket policy or bucket ACL allows public read access, the bucket is noncompliant."
+        Scope:
+          ComplianceResourceTypes:
+            - AWS::S3::Bucket
+          ComplianceResourceId:
+            Ref: WildRydesDataLakeBucket
+        Source:
+          Owner: AWS
+          SourceIdentifier: S3_BUCKET_PUBLIC_READ_PROHIBITED
+
+    S3PublicWriteProhibitedConfigRule:
+      Type: AWS::Config::ConfigRule
+      Properties:
+        ConfigRuleName: "S3PublicWriteProhibitedConfigRule-${self:provider.stage}"
+        Description: "Checks that your S3 buckets do not allow public write access. If an S3 bucket policy or bucket ACL allows public write access, the bucket is noncompliant."
+        Scope:
+          ComplianceResourceTypes:
+            - AWS::S3::Bucket
+          ComplianceResourceId:
+            Ref: WildRydesDataLakeBucket
+        Source:
+          Owner: AWS
+          SourceIdentifier: S3_BUCKET_PUBLIC_WRITE_PROHIBITED
+
+
